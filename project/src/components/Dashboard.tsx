@@ -5,12 +5,18 @@ const Dashboard: React.FC = () => {
   const [url, setUrl] = useState('');
   const [summary, setSummary] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [videoPath, setVideoPath] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  
+  //NOT DONE YET
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
+
+  //NOT DONE YET
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setVideoPath(URL.createObjectURL(file)); // Creates a temporary URL for preview
+      setFileName(file.name);
+      setVideoFile(file);
     }
   };
   
@@ -27,25 +33,57 @@ const Dashboard: React.FC = () => {
             body: JSON.stringify({ video_url: url }),
         });
 
-        const data = await response.json();
-        setSummary(data.summary);
+        const data1 = await response.json();
+        setSummary(data1.summary);
     } catch (error) {
         console.error("Error:", error);
         setSummary("Failed to fetch summary.");
     }
 
     setIsProcessing(false);
-};
-
+    alert("Summary Generated !!!");
+  };
+  
+  //NOT DONE YET
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    if (!videoFile) {
+      alert("Please select a video file first.");
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append("file", videoFile);
+  
+    try {
+      const response = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data2 = await response.json();
+      setSummary(data2.message);
+      if (response.ok) {
+        alert("Summary Generated !!!");
+      } else {
+        alert("File upload failed.");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("An error occurred while uploading.");
+    }
+    setIsProcessing(false);
+  };
 
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Video Summarizer</h1>
         
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 ">
+          <div className="grid md:grid-cols-2 gap-2">
+
+            <div className="border border-gray-900 p-6 rounded-xl shadow-lg">
               <h2 className="text-xl font-semibold mb-4">YouTube URL</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex gap-2">
@@ -62,35 +100,41 @@ const Dashboard: React.FC = () => {
                     disabled={isProcessing}
                   >
                     <Youtube className="h-5 w-5" />
-                    Process
+                    Process Link
                   </button>
                 </div>
               </form>
             </div>
             
-            <div>
-      <h2 className="text-xl font-semibold mb-4">Upload Video</h2>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
-        <p className="text-gray-600">Drag and drop your video here or</p>
-        <label className="mt-2 text-indigo-600 hover:text-indigo-500 cursor-pointer">
-          browse files
-          <input 
-            type="file" 
-            accept="video/*" 
-            onChange={handleFileChange} 
-            className="hidden"
-          />
-        </label>
-      </div>
+            <div className="border border-gray-900 p-6 rounded-xl shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">Upload Video</h2>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Upload className="h-8 w-8 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600">Drag and drop your video here or</p>
+                <label className="mt-2 text-indigo-600 hover:text-indigo-500 cursor-pointer">
+                  browse files
+                  <input 
+                    type="file" 
+                    accept="video/*" 
+                    onChange={handleFileChange} 
+                    className="hidden"
+                  />
+                </label>
+              </div>
 
-      {videoPath && (
-        <div className="mt-4">
-          <p className="text-gray-600">Selected Video:</p>
-          <video src={videoPath} controls className="mt-2 w-full max-w-md rounded-lg shadow" />
-        </div>
-      )}
-    </div>
+              {fileName && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-gray-600">Selected file: <span className="font-medium">{fileName}</span></p>
+                  <button
+                    onClick={handleUpload}
+                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2"
+                  >
+                    <Upload className="h-5 w-5" />
+                    Process Video
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -120,7 +164,7 @@ const Dashboard: React.FC = () => {
               </h2>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <audio controls className="w-full">
-                  <source src="#" type="audio/mpeg" />
+                  <source src="output.mp3" type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
               </div>

@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
+import shutil
 from pydantic import BaseModel
 import time
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,7 @@ import os
 from url_to_video import download
 from video_to_audio import audio_generator
 from audio_to_text import text_extractor
+from text_to_audio import output_audio
 
 #uvicorn main:app --reload
 #https://www.youtube.com/watch?v=GJlFGQTc0io
@@ -22,6 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+UPLOAD_DIR = "."
+os.makedirs(UPLOAD_DIR, exist_ok=True) # Ensure upload directory exists
+
 class VideoRequest(BaseModel):
     video_url: str
 
@@ -35,8 +40,20 @@ def summarize_video(request: VideoRequest):
     location=download(str(final_url))
     audio_file=audio_generator(location)
     text=text_extractor(audio_file)
-    print(text)
+    output_audio(text[:200])
     return {"summary": text}
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    location="video.mp4"
+    #file upload part
+    file_path = os.path.join(UPLOAD_DIR, "video.mp4")  # Static filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    audio_file=audio_generator(location)
+    text=text_extractor(audio_file)
+    output_audio(text[:200])
+    return {"message": text}
 
 if __name__ == "__main__":
     import uvicorn
