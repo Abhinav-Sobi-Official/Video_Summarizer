@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 import { LogIn, UserPlus } from 'lucide-react';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBOZhULFzARvUZOouK8O-yyROFYEn5mGNw",
+  authDomain: "honors-6da6c.firebaseapp.com",
+  projectId: "honors-6da6c",
+  storageBucket: "honors-6da6c.firebasestorage.app",
+  messagingSenderId: "1038066226192",
+  appId: "1:1038066226192:web:aab37ca8cd92cc6fd46695",
+  measurementId: "G-16834K3DFN"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 interface AuthPageProps {
   onLogin: (email: string, password: string) => void;
@@ -10,13 +25,21 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      onLogin(email, password);
-    } else {
-      onSignup(email, password);
+    setError(null);
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+        onLogin(email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        onSignup(email, password);
+      }
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -31,6 +54,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
             {isLogin ? 'Sign in to your account' : 'Create your account'}
           </p>
         </div>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>

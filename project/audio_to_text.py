@@ -30,5 +30,4 @@ def text_extractor(loc):
 
     except Exception as e:
         print("Error during transcription:", e)
-    
     return ""

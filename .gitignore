@@ -1,6 +1,7 @@
 audio.wav
 video.mp4
 output.mp3
+model.safetensors
 # Logs
 logs
 *.log

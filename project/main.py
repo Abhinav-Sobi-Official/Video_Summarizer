@@ -1,13 +1,13 @@
 from fastapi import FastAPI, File, UploadFile
 import shutil
 from pydantic import BaseModel
-import time
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from url_to_video import download
 from video_to_audio import audio_generator
 from audio_to_text import text_extractor
+from summarizer import full_summarize
 from text_to_audio import output_audio
 
 #uvicorn main:app --reload
@@ -40,8 +40,9 @@ def summarize_video(request: VideoRequest):
     location=download(str(final_url))
     audio_file=audio_generator(location)
     text=text_extractor(audio_file)
-    output_audio(text[:200])
-    return {"summary": text}
+    summary_text=full_summarize(text)
+    output_audio(summary_text)
+    return {"summary": summary_text}
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -52,8 +53,9 @@ async def upload_file(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
     audio_file=audio_generator(location)
     text=text_extractor(audio_file)
-    output_audio(text[:200])
-    return {"message": text}
+    summary_text=full_summarize(text)
+    output_audio(summary_text)
+    return {"message": summary_text}
 
 if __name__ == "__main__":
     import uvicorn
